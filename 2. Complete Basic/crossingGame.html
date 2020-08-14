@@ -1,0 +1,218 @@
+<!--
+// CANVAS
+/* Platform we draw on
+Packaged in HTML <canvas> tag
+Add a width and height
+Access the canvas and canvas context inside <script> tag 
+*/
+// DRAWING ON A CANVAS
+/* Supple a drawing context and draw function
+Add a rectangle with specified dimensions
+Draw a rectangle on canvas context
+Call draw function from a step function
+/*
+// ADDING MOVEMENT TO OBJECTS
+/* Create update function (lógica das posições)
+Update positions of items in the game
+Call update function in step function
+Can update multiple items with an array and for loops
+*/
+// UPDATING MULTIPLE ITEMS
+Functions forEach
+// ADDING PLAYER CONTROLS (http://keycode.info/)
+Add event listeners
+Listen for events such as mouse clicks or key presses
+Call functions to update positions accordingly
+Call update functions
+// COLLISION DETECTION AND OBJECTIVES
+Check x and y positions
+Determine if there is overlap by comparison
+Do this for all objects
+End game or perform other collision logic
+// SPRITES
+Entity in game with an image and properties suc as x and y position and width and height
+Can represent player, enemies, or even background and other objects
+Load in images
+Draw sprite images instead of rectangles
+-->
+
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Crossing Game</title>
+        <meta charset="UTF-8" >
+        <link rel="stylesheet" href="/stylepag.css" >
+        <style type="text/css">
+            canvas {
+                border: 2px solid black;
+                background-color: green;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Crossing Game</h1>
+        <canvas id='myCanvas' width='1000' height='500'></canvas>
+
+        <script type="text/javascript">
+            var canvas = document.getElementById('myCanvas');
+            var ctx = canvas.getContext('2d');
+
+            let screenWidth = 1000; // to make sure they are consistent
+            let screenHeight = 500;
+            let width = 50;
+            var isGameLive = true;
+
+            var isRightKeyPressed = false;
+            var isLeftKeyPressed = false;
+
+            class GameCharacter {
+                constructor(x, y, width, height, color, speed) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = width;
+                    this.height = height;
+                    this.color = color;
+                    this.speed = speed;
+                    this.maxSpeed = 4;
+                }
+
+                moveVertically() {
+                    if (this.y > screenHeight - 100 || this.y < 50) {
+                        this.speed = -this.speed;
+                    }
+                    this.y += this.speed;
+                }
+                moveHorizontally() {
+                    this.x += this.speed;
+                }
+            }
+
+            var enemies = [
+                new GameCharacter(200, 225, width, width, "rgb(0, 0, 255)", 2),
+                new GameCharacter(450, screenHeight - 100, width, width, "rgb(0, 0, 255)", 3),
+                new GameCharacter(700, 50, width, width, "rgb(0, 0, 255)", 4),
+            ];
+
+            var player = new GameCharacter(50, 225, width / 2, width / 2, "rgb(0, 255, 0)", 0);
+
+            var goal = new GameCharacter(screenWidth - width, 225, width, 50, "rgb(150, 155, 0)", 0);
+
+            var sprites = {};
+
+            var loadSprites = function() {
+                sprites.player = new Image();
+                sprites.player.src = "images/hero.png"
+                sprites.background = new Image();
+                sprites.background.src = "images/floor.png"
+                sprites.enemy = new Image();
+                sprites.enemy.src = "images/enemy.png"
+                sprites.goal = new Image();
+                sprites.goal.src = "images/chest.png"
+            }
+
+            document.onkeydown = function(event) {
+                // var keyPressed = event.keyCode;
+                // if (keyPressed == 39) {
+                //     player.speed = player.maxSpeed;
+                // } else if (keyPressed == 37) {
+                //     player.speed = -player.maxSpeed;
+                // }
+                var keyPressed = event.keyCode;
+                if (keyPressed == 39) {
+                    isRightKeyPressed = true;
+                    player.speed = player.maxSpeed;
+                } else if (keyPressed == 37) {
+                    isLeftKeyPressed = true;
+                    player.speed = -player.maxSpeed;
+                }
+            };
+            document.onkeyup = function(event) {
+                // var keyPressed = event.keyCode;
+                // if (keyPressed == 39 || keyPressed == 37) {
+                // player.speed = 0;
+                // }
+                var keyUp = event.keyCode;
+                if (keyUp == 39) {
+                    isRightKeyPressed = false;
+                    if (isLeftKeyPressed) {
+                        player.speed = -player.maxSpeed;
+                    } else {
+                        player.speed = 0;
+                    }
+                } else if (keyUp == 37) {
+                    isLeftKeyPressed = false;
+                    if (isRightKeyPressed) {
+                        player.speed = player.maxSpeed;
+                    } else {
+                        player.speed = 0;
+                    }
+                }
+            }
+
+            var checkCollisions = function(rect1, rect2) {
+                var xOverlap = Math.abs(rect1.x - rect2.x) <= Math.max(rect1.width, rect2.width);
+                var yOverlap = Math.abs(rect1.y - rect2.y) <= Math.max(rect1.height, rect2.height);
+                return xOverlap && yOverlap;
+            }
+
+            var draw = function() { 
+                ctx.clearRect(0, 0, screenWidth, screenHeight); // this clears the screen for the object
+
+                ctx.drawImage(sprites.background, 0, 0);
+                ctx.drawImage(sprites.player, player.x, player.y);
+                ctx.drawImage(sprites.goal, goal.x, goal.y);
+
+                //Abaixo maneira de criar um objeto só
+                /*ctx.fillStyle = rectangle.color;
+                ctx.fillRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height); */
+
+                //Abaixo antes de usar sprites
+                // ctx.fillStyle = player.color;
+                // ctx.fillRect(player.x, player.y, player.width, player.height);
+                
+                // ctx.fillStyle = goal.color;
+                // ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+
+                enemies.forEach(function(element) {
+                    // ctx.fillStyle = element.color;
+                    // ctx.fillRect(element.x, element.y, element.width, element.height);
+                    ctx.drawImage(sprites.enemy, element.x, element.y);
+                });
+            }
+
+            var update = function() { // usada pra fazer update no movimento
+                if (checkCollisions(player, goal)) {
+                        endGameLogic("You win!");
+                    }
+                
+                player.moveHorizontally();
+                
+                enemies.forEach(function(element) {
+                    if (checkCollisions(player, element)) {
+                        endGameLogic("Collision detected, game over!");
+                    }
+                    element.moveVertically();
+                });
+            }
+
+            var endGameLogic = function(text) {
+                isGameLive = false;
+                alert(text);
+                window.location = "";
+            }
+
+            var step = function() {
+                update();
+                draw();
+
+                if (isGameLive) {
+                    window.requestAnimationFrame(step);
+                }
+            }
+
+            loadSprites();
+            step();
+        </script>
+    </body>
+</html>
